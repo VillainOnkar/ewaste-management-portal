@@ -1,0 +1,45 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.admin === true && data.child('adminUid').val() === auth.uid))",
+        ".write": "auth != null && auth.uid === $uid && newData.exists()",
+        ".validate": "newData.hasChildren(['name', 'email', 'role', 'createdAt']) && newData.child('role').val() === 'user' && (!data.exists() || newData.child('adminUid').val() === data.child('adminUid').val())"
+      }
+    },
+    "adminUsers": {
+      "$adminUid": {
+        ".read": "auth != null && auth.token.admin === true && auth.uid === $adminUid",
+        ".write": false
+      }
+    },
+    "pickupRequests": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.admin === true && root.child('users').child($uid).child('adminUid').val() === auth.uid))",
+        "$requestId": {
+          ".write": "auth != null && ((auth.uid === $uid && !data.exists()) || (auth.token.admin === true && root.child('users').child($uid).child('adminUid').val() === auth.uid))",
+          ".validate": "newData.hasChildren(['uid', 'requestId', 'itemDetails', 'pickupDetails', 'status', 'createdAt']) && newData.child('uid').val() === $uid && newData.child('requestId').val() === $requestId && (data.exists() || (newData.child('offerPrice').isNumber() && newData.child('offerPrice').val() >= 0)) && ((auth.token.admin === true && root.child('users').child($uid).child('adminUid').val() === auth.uid) || newData.child('status').val() === 'Pending')"
+        }
+      }
+    },
+    "pickupPreferences": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.admin === true && root.child('users').child($uid).child('adminUid').val() === auth.uid))",
+        "$requestId": {
+          ".write": "auth != null && auth.uid === $uid && root.child('pickupRequests').child($uid).child($requestId).child('status').val() === 'Approved'",
+          ".validate": "newData.isString() && (newData.val() === 'self_dropoff' || newData.val() === 'arranged_pickup')"
+        }
+      }
+    },
+    "registrationInvites": {
+      ".read": false,
+      ".write": false
+    },
+    "collectors": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": "auth != null && auth.token.admin === true"
+    }
+  }
+}
